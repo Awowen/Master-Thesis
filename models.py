@@ -1,4 +1,3 @@
-# TODO: EEGnet
 # TODO: Deep ConvNet
 # TODO: Shallow ConvNet
 # TODO: Hybrid ConvNet
@@ -20,7 +19,7 @@ from keras.applications.mobilenet import DepthwiseConv2D
 ################### EEGnet model - from the author ################
 ###################################################################
 def EEGNet_org(nb_classes, Chans=64, Samples=128, regRate=0.0001,
-               dropoutRate=0.25, kernLength=64, numFilters=8):
+               dropoutRate=0.22, kernLength=64, numFilters=8):
     """ Keras Implementation of EEGNet (https://arxiv.org/abs/1611.08024v3)
 
     Requires Tensorflow >= 1.5 and Keras >= 2.1.3
@@ -83,6 +82,5 @@ def EEGNet_org(nb_classes, Chans=64, Samples=128, regRate=0.0001,
     dense = Dense(nb_classes, name='dense')(flatten)
     softmax = Activation('softmax', name='softmax')(dense)
 
-    Model(inputs=input1, outputs=softmax)
 
     return Model(inputs=input1, outputs=softmax)

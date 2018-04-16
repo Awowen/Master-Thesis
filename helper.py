@@ -1,4 +1,5 @@
 # TODO: Prepare the data function
+# TODO: Add exceptions
 
 import numpy as np
 
@@ -9,7 +10,8 @@ import matplotlib.pylab as plt
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import precision_recall_curve, average_precision_score
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-
+from sklearn.model_selection import train_test_split
+from scipy import signal
 import matplotlib.pylab as plt
 import itertools
 
@@ -70,7 +72,7 @@ def plot_confusion_matrix(cm, classes, filename,
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-    plt.savefig(filename, bbox_inches='tight')
+    plt.savefig('{}_confusion.png'.format(filename), bbox_inches='tight')
 
 
 ###################################################################
@@ -78,22 +80,27 @@ def plot_confusion_matrix(cm, classes, filename,
 ###################################################################
 def plot_precision_recall_curve(y_test, y_score,
                                 filename):
-    average_precision = average_precision_score(y_test, y_score)
-    precision, recall, _ = precision_recall_curve(y_test, y_score)
+    precision = dict()
+    recall = dict()
+    average_precision = dict()
+    for i in range(4):
+        precision[i], recall[i], _ = precision_recall_curve(y_test[:, i], y_score[:, i])
+        average_precision[i] = average_precision_score(y_test[:, i], y_score[:, i])
+    precision['micro'], recall['micro'], _ = precision_recall_curve(y_test.ravel(),
+                                                                    y_score.ravel())
+    average_precision['micro'] = average_precision_score(y_test, y_score,
+                                                         average='micro')
 
     plt.figure()
-    plt.step(recall, precision, color='b', alpha=0.2,
-             where='post')
-    plt.fill_between(recall, precision, step='post', alpha=0.2,
-                     color='b')
-
+    plt.step(recall['micro'], precision['micro'], color='b', alpha=.2, where='post')
+    plt.fill_between(recall['micro'], precision['micro'], step='post', alpha=.2, color='b')
     plt.xlabel('Recall')
     plt.ylabel('Precision')
-    plt.ylim([0.0, 1.05])
-    plt.xlim([0.0, 1.0])
-    plt.title('2-class Precision-Recall curve: AP={0:0.2f}'.format(
-        average_precision))
-    plt.savefig(filename, bbox_inches='tight')
+    plt.ylim([.0, 1.05])
+    plt.xlim([.0, 1.0])
+    plt.title('Average precision score, micro averaged over all classes: AP={0:0.2f}'.format(average_precision['micro']))
+    plt.savefig('{}_precision_recall.png'.format(filename), bbox_incches='tight')
+    return average_precision['micro']
 
 
 ###################################################################
@@ -117,18 +124,49 @@ def plot_loss_acc(history, filename):
     subfig.set_xlabel('Epoch')
     subfig.legend(loc='upper left')
     plt.grid()
-    fig.savefig(filename, bbox_inches='tight')
+    fig.savefig('{}_loss_acc.png'.format(filename), bbox_inches='tight')
 
 
 ###################################################################
 ##################### Save metrics into .csv ######################
 ###################################################################
 def metrics_to_csv(metrics, filename):
-    np.savetxt(filename, metrics, delimiter=',')
+    np.savetxt('{}.csv'.format(filename), metrics, delimiter=',')
+
+
+def prediction_vector(y_prob):
+    y_pred = y_prob.argmax(axis=-1)
+    return y_pred
+
+
+def get_metrics_and_plots(labels, y_score, history, filename, class_names):
+    values = np.zeros(4)
+    # Plot the confusion matrix
+
+    y_pred = prediction_vector(y_score)
+    testing_labels = labels
+    labels = labels.argmax(axis=-1)
+    cnf_matrix = confusion_matrix(labels, y_pred)
+    plot_confusion_matrix(cnf_matrix, class_names, filename)
+    # Plot the precision recall curve
+    plot_precision_recall_curve(testing_labels, y_score, filename)
+    # Plot the loss and accuracy
+    plot_loss_acc(history, filename)
+
+    # Accuracy
+    values[0] = accuracy_score(labels, y_pred)
+    # Precision
+    values[1] = precision_score(labels, y_pred, average='micro')
+    # Recall
+    values[2] = recall_score(labels, y_pred, average='micro')
+    # f1 score
+    values[3] = f1_score(labels, y_pred, average='micro')
+
+    return values
 
 
 ###################################################################
-######################## Data Preparation #########################
+##################### Data Preparation function ###################
 ###################################################################
 
 def load_single_file(filename):
@@ -143,47 +181,121 @@ def load_data(filename_list):
     return data
 
 
-def simplify_data_per_run(run_data):
-    # TODO: Remove artifacts from dataset? - To ask to Tibor
+def simplify_data_per_run(run_data, highpass, eog, chs):
 
     # simple_X = zeros(len(run_data['trial'])-sum(run_data['artifact']))
     # simple_y = zeros(len(run_data['trial'])-sum(run_data['artifact']))
 
     simple_X = [None] * len(run_data['trial'])
     simple_y = [None] * len(run_data['trial'])
-
+    if highpass:
+        run_data['X'] = butter_highpass_filter(run_data['X'], 4)
     for i, t_ in enumerate(run_data['trial']):
         # trials are not 'int' but list of one --> take t_[0] gives the correct value
-        simple_X[i] = run_data['X'][t_[0] - 125:t_[0] + 1000]
-        simple_y[i] = run_data['y'][i]
+        # Same for labels
+        if eog:
+            simple_X[i] = remove_eog(np.asanyarray(run_data['X'][t_[0] - 125:t_[0] + 1000]))
+            if chs:
+                simple_X[i] = simple_X[i][:, chs]
+        if not eog:
+            simple_X[i] = run_data['X'][t_[0] - 125:t_[0] + 1000]
+            if chs:
+                chs = chs + [19, 20, 21]
+                simple_X[i] = simple_X[i][:, chs]
+
+        simple_y[i] = run_data['y'][i][0]
 
     return simple_X, simple_y
 
 
-def simplify_data_per_user(user_data):
+def simplify_data_per_user(user_data, highpass, eog, chs):
     simple_user_X = [None] * 6
     simple_user_y = [None] * 6
 
-    for i, run in enumerate(user_data[3:8]):
-        simple_user_X[i], simple_user_y[i] = simplify_data_per_run(run_data=run)
+    for i, run in enumerate(user_data[3:9]):
+        simple_user_X[i], simple_user_y[i] = simplify_data_per_run(run, highpass, eog, chs)
 
     return simple_user_X, simple_user_y
 
 
-def load_simplify_per_user(filename):
-    temp = simplify_data_per_user(load_single_file(filename))
-
+def load_simplify_per_user(filename, highpass, eog, chs):
+    temp = simplify_data_per_user(load_single_file(filename), highpass, eog, chs)
     return temp
 
 
-def load_simplify_data(filename_list):
+def load_simplify_data(filename_list, highpass=False, eog=False, chs=[]):
     data = [None] * len(filename_list)
 
     for i, f_ in enumerate(filename_list):
-        data[i] = load_simplify_per_user(f_)
+        data[i] = load_simplify_per_user(f_, highpass, eog, chs)
 
     return data
 
-list = ['Data/A01T.mat', 'Data/A01T.mat']
 
-load_simplify_data(list)
+###################################################################
+##################### Data Preparation function ###################
+###################################################################
+def prepare_data_standard_from_list_split(data, size):
+    big_X_train = [None] * len(data)
+    big_X_test = [None] * len(data)
+    big_y_train = [None] * len(data)
+    big_y_test = [None] * len(data)
+
+    for i, u_ in enumerate(data):
+        big_X_train[i], big_X_test[i], big_y_train[i], big_y_test[i] = prepare_data_standard_for_user_split(u_, size)
+
+    return big_X_train, big_X_test, big_y_train, big_y_test
+
+
+def prepare_data_standard_for_user_split(data, size):
+    X_train = [None] * len(data[0])
+    X_test = [None] * len(data[0])
+    y_train = [None] * len(data[0])
+    y_test = [None] * len(data[0])
+
+    for j in range(len(data[0])):
+        X_train[j], X_test[j], y_train[j], y_test[j] = train_test_split(data[0][j], data[1][j],
+                                                                        test_size=size, random_state=42)
+
+    return X_train, X_test, y_train, y_test
+
+
+def prepare_data_standard_for_user(data):
+    X_train = [None] * len(data[0])
+    y_train = [None] * len(data[0])
+
+    for j in range(len(data[0])):
+        X_train[j], y_train[j] = data[0][j], data[1][j]
+
+    return X_train, y_train
+
+
+def prepare_data_standard_from_list(data):
+    big_X = [None] * len(data)
+    big_y = [None] * len(data)
+    for i, u_ in enumerate(data):
+        big_X[i], big_y[i] = prepare_data_standard_for_user(u_)
+    return big_X, big_y
+
+
+###################################################################
+###################### Filtering functions ########################
+###################################################################
+
+def butter_highpass(cutoff, fs, order=5):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    # noinspection PyTupleAssignmentBalance
+    b, a = signal.butter(order, normal_cutoff, btype='high', analog=False)
+    return b, a
+
+
+def butter_highpass_filter(data, cutoff, fs=250, order=5):
+    b, a = butter_highpass(cutoff, fs, order=order)
+    y = signal.filtfilt(b, a, data)
+    return y
+
+
+def remove_eog(data):
+    EEG_only = data[:, :-3]
+    return EEG_only

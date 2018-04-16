@@ -1,5 +1,12 @@
 Data/*
-
+Reports/*
+Presentations/*
+plots*/
+big*/
+Recap*
+wiEOG/
+woEOG/
+distribu*/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
