@@ -6,6 +6,11 @@ big*/
 Recap*
 wiEOG/
 woEOG/
+*/*.csv
+*/*.png
+*/*/*.png
+*/*/*.csv
+*/
 distribu*/
 # Byte-compiled / optimized / DLL files
 __pycache__/

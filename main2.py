@@ -22,4 +22,12 @@ big_X_test, big_y_test = prepare_data_standard_from_list(load_simplify_data(test
 
 full_distributed('EEG_net', big_X_train, big_y_train, big_X_test, big_y_test,
                  class_names=['Left hand', 'Right hand','Both Feet', 'Tongue'],
-                 ch_num=25, addon='022_Dropout')
+                 ch_num=25, dr=0.1, addon='_01_Dropout')
+
+# Distributed learning
+big_X_train, big_y_train = prepare_data_standard_from_list(load_simplify_data(train_list, True, False))
+big_X_test, big_y_test = prepare_data_standard_from_list(load_simplify_data(test_list, True, False))
+
+full_distributed('EEG_net', big_X_train, big_y_train, big_X_test, big_y_test,
+                 class_names=['Left hand', 'Right hand','Both Feet', 'Tongue'],
+                 ch_num=25, dr=0.2, addon='_02_Dropout')
