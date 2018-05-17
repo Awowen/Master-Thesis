@@ -170,7 +170,7 @@ def incremental_distributed_learning(model_name, big_X_train, big_y_train, big_X
 
 
 def freezing_layers(model_name, big_X_train, big_y_train, big_X_test, big_y_test,
-                    class_names=class_names, ch_num=25, dr=0.1, addon=''):
+                    class_names=class_names, ch_num=25, dr=0.1, addon='', fz_layers=-2):
 
     ###
     ### First create the sequence of training users and single test user
@@ -263,19 +263,20 @@ def freezing_layers(model_name, big_X_train, big_y_train, big_X_test, big_y_test
         # convert integers to dummy variables (i.e. one hot encoded)
         labels_test_2 = np_utils.to_categorical(encoded_Y)
 
-        filename_ = '{0}{1}{2}'.format(model_name, 'Freezing_{}'.format(user_list[-1] + 1), addon)
+        filename_ = '{0}{1}{2}{3}'.format(model_name, 'Freezing_{}'.format(user_list[-1] + 1), addon,
+                                          '_{}_Frozen'.format(str(fz_layers)))
 
         metrics[user_list[-1]] = freezing_unit(model, full_features, full_labels,
                                                features_train_2, features_test_2,
                                                labels_train_2, labels_test_2,
-                                               filename_, class_names)
+                                               filename_, class_names, fz_layers)
     metrics_to_csv(metrics, '{}_Frozen_Learning_{}'.format(model_name, filename_))
 
 
 def freezing_unit(model, full_features, full_labels,
                   features_train_2, features_test_2,
                   labels_train_2, labels_test_2,
-                  filename, class_names):
+                  filename, class_names, fz_layers):
     ###
     ### First train the data on all the users -1
     ###
@@ -285,7 +286,7 @@ def freezing_unit(model, full_features, full_labels,
     ###
     ### Freeze all layers, except for the last two ones
     ###
-    for layer in model.layers[:-2]:
+    for layer in model.layers[:fz_layers]:
         layer.trainable = False
 
     history = model.fit(features_train_2, labels_train_2,
