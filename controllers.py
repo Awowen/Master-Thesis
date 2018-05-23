@@ -8,6 +8,7 @@ import numpy as np
 from keras.utils import np_utils
 from sklearn.preprocessing import LabelEncoder
 import time
+from keras.models import load_model
 
 # load_simplify_data(filenames) --> to put in main
 class_names = ['Left hand', 'Right hand',
@@ -275,7 +276,13 @@ def freezing_unit(model, full_features, full_labels,
 
     end = time.time()
     print('First model training time: {}'.format(end - start))
+    model.save('{}.h5'.format(filename))
 
+    # # Deletes the existing model
+    # del model
+    #
+    # # Returns a compiled model identical to the previous one
+    # model = load_model('my_model.h5')
 
     ###
     ### Freeze all layers, except for the last two ones
@@ -286,7 +293,7 @@ def freezing_unit(model, full_features, full_labels,
     start = time.time()
 
     history = model.fit(features_train_2, labels_train_2,
-                        batch_size=32, epochs=100, verbose=0,
+                        batch_size=32, epochs=50, verbose=0,
                         validation_data=(features_test_2, labels_test_2))
 
     end = time.time()

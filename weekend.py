@@ -51,4 +51,4 @@ big_X_test, big_y_test = prepare_data_standard_from_list(load_simplify_data(test
 
 freezing_layers('EEG_net', big_X_train, big_y_train, big_X_test, big_y_test,
                 class_names=['Left hand', 'Right hand', 'Both Feet', 'Tongue'],
-                ch_num=25, dr=0.1, addon='01_Dropout')
+                ch_num=25, dr=0.1, addon='50_Epochs')
