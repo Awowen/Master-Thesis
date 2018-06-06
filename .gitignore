@@ -1,17 +1,11 @@
 Data/*
 Reports/*
 Presentations/*
-plots*/
-big*/
-Recap*
-wiEOG/
-woEOG/
-*/*.csv
-*/*.png
-*/*/*.png
-*/*/*.csv
-*/
-distribu*/
+Article/*
+final_plots/*
+Results_Archive/*
+
+*.xlsx
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
