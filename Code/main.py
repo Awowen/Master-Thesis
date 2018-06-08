@@ -55,7 +55,7 @@ test_list.sort()
 #                            class_names=['Left hand', 'Right hand',
 #                                         'Both Feet', 'Tongue'], ch_num=25)
 # ########################################################################################################################
-# Only look at the channels Fz, C3, Cz, C4, Fz
+# Only look at the channels Fz, C3, Cz, C4, Pz
 tested_channels = [0, 7, 9, 11, 19]
 # # Without EOG, with filtering, selected channels
 # big_X_train, big_y_train = prepare_data_standard_from_list(load_simplify_data(train_list, True, True, tested_channels))

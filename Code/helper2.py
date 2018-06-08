@@ -13,6 +13,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.model_selection import train_test_split
 from scipy import signal
 import matplotlib.pylab as plt
+import scipy
 import itertools
 
 import random
@@ -191,28 +192,23 @@ def simplify_data_per_run(run_data, highpass, eog, chs):
     if highpass:
         run_data['X'] = butter_highpass_filter(run_data['X'], 4)
     for i, t_ in enumerate(run_data['trial']):
-        # trials are not 'int' but list of one --> take t_[0] gives the correct value
-        # Same for labels
-        if eog:
-            simple_X[i] = remove_eog(np.asanyarray(run_data['X'][t_[0] - 125:t_[0] + 1000]))
-            if chs:
-                simple_X[i] = simple_X[i][:, chs]
         if not eog:
-            simple_X[i] = run_data['X'][t_[0] - 125:t_[0] + 1000]
+            simple_X[i] = run_data['X'][t_ - 256:t_ + 2048]
             if chs:
                 chs = chs
                 simple_X[i] = simple_X[i][:, chs]
+                simple_X[i] = scipy.signal.resample(simple_X[i], int(1125), axis=0)
 
-        simple_y[i] = run_data['y'][i][0]
+        simple_y[i] = run_data['y'][i]
 
     return simple_X, simple_y
 
 
 def simplify_data_per_user(user_data, highpass, eog, chs):
-    simple_user_X = [None] * 6
-    simple_user_y = [None] * 6
+    simple_user_X = [None] * len(user_data)
+    simple_user_y = [None] * len(user_data)
 
-    for i, run in enumerate(user_data[3:9]):
+    for i, run in enumerate(user_data):
         simple_user_X[i], simple_user_y[i] = simplify_data_per_run(run, highpass, eog, chs)
 
     return simple_user_X, simple_user_y
@@ -290,12 +286,7 @@ def butter_highpass(cutoff, fs, order=5):
     return b, a
 
 
-def butter_highpass_filter(data, cutoff, fs=250, order=5):
+def butter_highpass_filter(data, cutoff, fs=512, order=5):
     b, a = butter_highpass(cutoff, fs, order=order)
-    y = signal.filtfilt(b, a, data)
+    y = signal.filtfilt(b, a, data, axis=0)
     return y
-
-
-def remove_eog(data):
-    EEG_only = data[:, :-3]
-    return EEG_only

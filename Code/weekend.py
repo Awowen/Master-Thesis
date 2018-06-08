@@ -8,33 +8,19 @@ import glob as glob
 train_list = glob.glob('../../../opt/shared-data/BCI_Comp_4/A*E.mat')
 test_list = glob.glob('../../../opt/shared-data/BCI_Comp_4/A*T.mat')
 
-# train_list = glob.glob('Data/A*E.mat')
-# test_list = glob.glob('Data/A*T.mat')
+#train_list = glob.glob('../Data/A*E.mat')
+#test_list = glob.glob('../Data/A*T.mat')
 
 train_list.sort()
 test_list.sort()
-#
-#
-# # Distributed learning
-# big_X_train, big_y_train = prepare_data_standard_from_list(load_simplify_data(train_list, True, False))
-# big_X_test, big_y_test = prepare_data_standard_from_list(load_simplify_data(test_list, True, False))
-#
-# full_distributed('EEG_net', big_X_train, big_y_train, big_X_test, big_y_test,
-#                  class_names=['Left hand', 'Right hand','Both Feet', 'Tongue'],
-#                  ch_num=25, dr=0.1, addon='_01_Dropout')
-#
-# # Distributed learning
-# big_X_train, big_y_train = prepare_data_standard_from_list(load_simplify_data(train_list, True, False))
-# big_X_test, big_y_test = prepare_data_standard_from_list(load_simplify_data(test_list, True, False))
-#
-# full_distributed('EEG_net', big_X_train, big_y_train, big_X_test, big_y_test,
-#                  class_names=['Left hand', 'Right hand','Both Feet', 'Tongue'],
-#                  ch_num=25, dr=0.2, addon='_02_Dropout')
+
+tested_channels = [1, 3, 5, 6, 7, 8, 9,
+                   10, 11, 12, 13, 15, 17]
 
 
 # Freezing Learning
-big_X_train, big_y_train = prepare_data_standard_from_list(load_simplify_data(train_list, True, False))
-big_X_test, big_y_test = prepare_data_standard_from_list(load_simplify_data(test_list, True, False))
+big_X_train, big_y_train = prepare_data_standard_from_list(load_simplify_data(train_list, True, True, tested_channels))
+big_X_test, big_y_test = prepare_data_standard_from_list(load_simplify_data(test_list, True, True, tested_channels))
 
 # for i in range(5, 40, 5):
 #     d = i / 100
@@ -49,9 +35,9 @@ big_X_test, big_y_test = prepare_data_standard_from_list(load_simplify_data(test
 #                     class_names=['Left hand', 'Right hand', 'Both Feet', 'Tongue'],
 #                     ch_num=25, dr=0.1, addon='_01_Dropout', fz_layers=i)
 
-# freezing_layers('EEG_net', big_X_train, big_y_train, big_X_test, big_y_test,
-#                 class_names=['Left hand', 'Right hand', 'Both Feet', 'Tongue'],
-#                 ch_num=25, dr=0.1, addon='_50_Epochs')
+freezing_layers('EEG_net', big_X_train, big_y_train, big_X_test, big_y_test,
+                class_names=['Left hand', 'Right hand', 'Both Feet', 'Tongue'],
+                ch_num=13, dr=0.1, addon='_13_channels')
 
 
 # for i in range(-1, -20, -1):
@@ -61,11 +47,11 @@ big_X_test, big_y_test = prepare_data_standard_from_list(load_simplify_data(test
 #                           class_names=['Left hand', 'Right hand', 'Both Feet', 'Tongue'],
 #                           ch_num=25, ep=j, addon='', fz_layers=i)
 
-for j in range(50, 100, 50):
-    print('Epochs {}'.format(j))
-    splited_with_model('EEG_net', big_X_train, big_y_train, big_X_test, big_y_test,
-                       class_names=['Left hand', 'Right hand', 'Both Feet', 'Tongue'],
-                       ch_num=25, ep=j, addon='')
+# for j in range(50, 100, 50):
+#     print('Epochs {}'.format(j))
+#     splited_with_model('EEG_net', big_X_train, big_y_train, big_X_test, big_y_test,
+#                        class_names=['Left hand', 'Right hand', 'Both Feet', 'Tongue'],
+#                        ch_num=25, ep=j, addon='')
 # frozen_with_model('EEG_net', big_X_train, big_y_train, big_X_test, big_y_test,
 #                   class_names=['Left hand', 'Right hand', 'Both Feet', 'Tongue'],
 #                   ch_num=25, dr=0.1, addon='50_Epochs')

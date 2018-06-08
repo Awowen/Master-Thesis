@@ -594,11 +594,11 @@ def splited_with_model(model_name, big_X_train, big_y_train, big_X_test, big_y_t
         # convert integers to dummy variables (i.e. one hot encoded)
         labels_test_2 = np_utils.to_categorical(encoded_Y)
 
-        filename_ = '{0}{1}{2}{3}{4}'.format(model_name, 'Freezing_{}'.format(user_list[-1] + 1), addon,
-                                             '_Splited', '_{}_Epochs'.format(str(ep)))
+        filename_ = '{0}{1}{2}{3}'.format(model_name, '_Split_{}'.format(user_list[-1] + 1), addon,
+                                          '_{}_Epochs'.format(str(ep)))
 
         model_file = 'models/{0}{1}_50_Epochs{2}.h5'.format(model_name, 'Freezing_{}'.format(user_list[-1] + 1),
-                                                     '_-2_Frozen')
+                                                            '_-2_Frozen')
 
         metrics[user_list[-1]] = split_unit_with_model(model_file, features_train_2, features_test_2,
                                                           labels_train_2, labels_test_2,
@@ -607,7 +607,7 @@ def splited_with_model(model_name, big_X_train, big_y_train, big_X_test, big_y_t
         del features_train_2, features_test_2, \
             labels_train_2, labels_test_2
 
-    metrics_to_csv(metrics, '{}_Frozen_Learning_{}'.format(model_name, filename_))
+    metrics_to_csv(metrics, '{}_Split_Learning_{}'.format(model_name, filename_))
 
 
 def split_unit_with_model(model_file, features_train_2, features_test_2,
