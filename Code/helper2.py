@@ -84,7 +84,7 @@ def plot_precision_recall_curve(y_test, y_score,
     precision = dict()
     recall = dict()
     average_precision = dict()
-    for i in range(4):
+    for i in range(2):
         precision[i], recall[i], _ = precision_recall_curve(y_test[:, i], y_score[:, i])
         average_precision[i] = average_precision_score(y_test[:, i], y_score[:, i])
     precision['micro'], recall['micro'], _ = precision_recall_curve(y_test.ravel(),

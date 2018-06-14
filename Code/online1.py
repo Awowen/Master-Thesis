@@ -15,14 +15,13 @@ test_list = glob.glob('../../../opt/shared-data/BCI_Comp_4/A*T.mat')
 train_list.sort()
 test_list.sort()
 
-tested_channels = [1, 3, 5, 6, 7, 8, 9,
-                   10, 11, 12, 13, 15, 17]
+tested_channels = [7, 9, 11,
+                   22, 23, 24]
 
 
 # Freezing Learning
-big_X_train, big_y_train = prepare_data_standard_from_list(load_simplify_data(train_list, True, True, tested_channels))
-big_X_test, big_y_test = prepare_data_standard_from_list(load_simplify_data(test_list, True, True, tested_channels))
-
+big_X_train, big_y_train = prepare_data_standard_from_list(load_simplify_data(train_list, True, False, tested_channels))
+big_X_test, big_y_test = prepare_data_standard_from_list(load_simplify_data(test_list, True, False, tested_channels))
 
 
 # EEGnet = EEGNet_org(nb_classes=4, Chans=13, Samples=1125, dropoutRate=0.1)
@@ -32,9 +31,13 @@ big_X_test, big_y_test = prepare_data_standard_from_list(load_simplify_data(test
 #              ch_num=13, addon='_13_channels')
 #
 
-frozen_from_2mvt('EEG_net', 'models/EEG_net_Full_Freezing_2mvt_13_channels.h5', big_X_train, big_y_train, big_X_test, big_y_test,
-                 class_names=['Left hand', 'Right hand', 'Both Feet', 'Tongue'], ch_num=13,
-                 ep=100, dr=0.1, addon='_13_channels')
+full_freezing('EEG_Net', big_X_train, big_y_train, big_X_test, big_y_test,
+              class_names=['Left hand', 'Right hand', 'Both Feet', 'Tongue'],
+              ch_num=6, dr=0.1, addon='_6_Channels')
+
+# frozen_from_2mvt('EEG_net', 'models/EEG_net_Full_Freezing_2mvt_13_channels.h5', big_X_train, big_y_train, big_X_test, big_y_test,
+#                  class_names=['Left hand', 'Right hand', 'Both Feet', 'Tongue'], ch_num=13,
+#                  ep=200, dr=0.1, addon='_13_channels')
 
 # freezing_layers('EEG_net', big_X_train, big_y_train, big_X_test, big_y_test,
 #                 class_names=['Left hand', 'Right hand', 'Both Feet', 'Tongue'],

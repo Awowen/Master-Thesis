@@ -1,17 +1,16 @@
 # TODO: Cropped training
 import keras
-from models import EEGNet_org
-from helper import prediction_vector, get_metrics_and_plots
-from helper import metrics_to_csv
+from models import EEGNet_org, EEGNet_var
+from helper2 import prediction_vector, get_metrics_and_plots
+from helper2 import metrics_to_csv
 from keras.optimizers import Adam
-from keras.losses import binary_crossentropy, categorical_crossentropy
+from keras.losses import categorical_crossentropy, categorical_crossentropy
 import numpy as np
 from keras.utils import np_utils
 from sklearn.preprocessing import LabelEncoder
 import time
 from keras.models import load_model
 from keras.utils.generic_utils import CustomObjectScope
-from models import EEGNet_var
 
 # load_simplify_data(filenames) --> to put in main
 class_names = ['Left hand', 'Right hand',
@@ -50,9 +49,6 @@ def standard_all(model_, model_name, big_X_train, big_y_train,
     features_train = [None] * len(big_X_train)
     labels_train = [None] * len(big_y_train)
 
-    model_.compile(loss=categorical_crossentropy,
-                   optimizer=Adam(), metrics=['accuracy'])
-
     for i, (X_user, y_user) in enumerate(zip(big_X_train, big_y_train)):
         temp = [item for sublist in X_user for item in sublist]
         temp = np.asanyarray(temp)
@@ -84,8 +80,13 @@ def standard_all(model_, model_name, big_X_train, big_y_train,
     metrics = np.zeros(((len(big_y_train)), 4))
 
     for i in range(len(big_X_train)):
+        model = EEGNet_org(nb_classes=len(class_names), Chans=ch_num, Samples=1125, dropoutRate=0.2)
+
+        model.compile(loss=categorical_crossentropy,
+                      optimizer=Adam(), metrics=['accuracy'])
+
         filename_ = '{0}{1}{2}'.format(model_name, 'standard_user_{}'.format(i + 1), addon)
-        metrics[i] = standard_unit(model_, features_train[i], labels_train[i],
+        metrics[i] = standard_unit(model, features_train[i], labels_train[i],
                                    features_test[i], labels_test[i], filename_,
                                    class_names)
 
@@ -104,13 +105,10 @@ def opt_Dropout_rate_CV_EEGNet(dropout_start, dropout_stop, model_name, big_X_tr
 
 def full_distributed(model_name, big_X_train, big_y_train, big_X_test, big_y_test,
                      class_names=class_names, ch_num=25, dr=0.1, addon=''):
-    model = EEGNet_org(nb_classes=4, Chans=ch_num, Samples=1125, dropoutRate=dr)
+
 
     features_train = [None] * len(big_X_train)
     labels_train = [None] * len(big_y_train)
-
-    model.compile(loss=categorical_crossentropy,
-                  optimizer=Adam(), metrics=['accuracy'])
 
     for i, (X_user, y_user) in enumerate(zip(big_X_train, big_y_train)):
         temp = [item for sublist in X_user for item in sublist]
@@ -147,6 +145,11 @@ def full_distributed(model_name, big_X_train, big_y_train, big_X_test, big_y_tes
     metrics = np.zeros(((len(big_y_train)), 4))
 
     for i in range(len(big_X_train)):
+        model = EEGNet_org(nb_classes=len(class_names), Chans=ch_num, Samples=1125, dropoutRate=dr)
+
+        model.compile(loss=categorical_crossentropy,
+                      optimizer=Adam(), metrics=['accuracy'])
+
         filename_ = '{0}{1}{2}'.format(model_name, 'Distributed_{}'.format(i + 1), addon)
         metrics[i] = distributed_unit(model, full_features, full_labels,
                                       features_test[i], labels_test[i],
@@ -170,13 +173,13 @@ def freezing_layers(model_name, big_X_train, big_y_train, big_X_test, big_y_test
     ### First create the sequence of training users and single test user
     ###
     list_element = []
-    my_list = [0, 1, 2, 3, 4, 5, 6, 7]
+    my_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     series = []
 
-    for idx in range(72):
-        if idx % 9 != 0:
+    for idx in range(182):
+        if idx % 14 != 0:
             list_element.append(my_list[idx % len(my_list)])
-        elif idx % 9 == 0:
+        elif idx % 14 == 0:
             series.append(list_element)
             list_element = []
     series[0] = list_element
@@ -188,7 +191,7 @@ def freezing_layers(model_name, big_X_train, big_y_train, big_X_test, big_y_test
     for user_list in series:
         print('Starting Frozen learning for user {}'.format(user_list[-1] + 1))
 
-        model = EEGNet_org(nb_classes=4, Chans=ch_num, Samples=1125, dropoutRate=dr)
+        model = EEGNet_org(nb_classes=len(class_names), Chans=ch_num, Samples=1125, dropoutRate=dr)
 
         model.compile(loss=categorical_crossentropy,
                       optimizer=Adam(), metrics=['accuracy'])
@@ -257,7 +260,7 @@ def freezing_layers(model_name, big_X_train, big_y_train, big_X_test, big_y_test
         # convert integers to dummy variables (i.e. one hot encoded)
         labels_test_2 = np_utils.to_categorical(encoded_Y)
 
-        filename_ = '{0}{1}{2}{3}'.format(model_name, 'Freezing_{}'.format(user_list[-1] + 1), addon,
+        filename_ = '{0}{1}{2}{3}'.format(model_name, 'Freezing_{}_2mvt'.format(user_list[-1] + 1), addon,
                                           '_{}_Frozen'.format(str(fz_layers)))
 
         metrics[user_list[-1]] = freezing_unit(model, full_features, full_labels,
@@ -635,86 +638,7 @@ def split_unit_with_model(model_file, features_train_2, features_test_2,
 
     return values
 
-def full_freezing(model_name, big_X_train, big_y_train, big_X_test, big_y_test,
-                    class_names=class_names, ch_num=25, dr=0.1, addon=''):
-    ###
-    ### Take all the data for training
-    ###
-
-    ###
-    ### Train and save the model
-    ###
-
-    my_list = [0, 1, 2, 3, 4, 5, 6, 7]
-
-    model = EEGNet_org(nb_classes=4, Chans=ch_num, Samples=1125, dropoutRate=dr)
-
-    model.compile(loss=categorical_crossentropy,
-                  optimizer=Adam(), metrics=['accuracy'])
-
-    features_train = []
-    labels_train = []
-
-    for i in my_list:
-        temp = [item for sublist in big_X_train[i] for item in sublist]
-        temp = np.asanyarray(temp)
-        temp = np.swapaxes(temp, 1, 2)
-        features_train.append(temp.reshape(temp.shape[0], 1, ch_num, 1125))
-        lab = [item for sublist in big_y_train[i] for item in sublist]
-        # encode class values as integers
-        encoder = LabelEncoder()
-        encoder.fit(lab)
-        encoded_Y = encoder.transform(lab)
-        # convert integers to dummy variables (i.e. one hot encoded)
-        labels_train.append(np_utils.to_categorical(encoded_Y))
-
-        # Also add the testing data to increase the size of training data
-        temp = [item for sublist in big_X_test[i] for item in sublist]
-        temp = np.asanyarray(temp)
-        temp = np.swapaxes(temp, 1, 2)
-        features_train.append(temp.reshape(temp.shape[0], 1, ch_num, 1125))
-        lab = [item for sublist in big_y_test[i] for item in sublist]
-        # encode class values as integers
-        encoder = LabelEncoder()
-        encoder.fit(lab)
-        encoded_Y = encoder.transform(lab)
-        # convert integers to dummy variables (i.e. one hot encoded)
-        labels_train.append(np_utils.to_categorical(encoded_Y))
-
-        # Flatten the data for training
-        full_features = np.vstack(features_train)
-        full_labels = np.vstack(labels_train)
-
-    filename_ = '{0}{1}{2}'.format(model_name, '_Full_Freezing', addon)
-
-    full_freezing_unit(model, full_features, full_labels,
-                       filename_, class_names)
-
-
-def full_freezing_unit(model, full_features, full_labels,
-                  filename, class_names):
-    ###
-    ### First train the data on all the users -1
-    ###
-    start = time.time()
-
-    model.fit(full_features, full_labels,
-              batch_size=32, epochs=500, verbose=0)
-
-    end = time.time()
-    print('First model training time: {}'.format(end - start))
-    model.save('models/{}.h5'.format(filename))
-
-    model.save_weights('models/{}_w.h5'.format(filename))
-
-    # # Deletes the existing model
-    # del model
-    #
-    # # Returns a compiled model identical to the previous one
-    # model = load_model('my_model.h5')
-
-
-def frozen_from_2mvt(model_name, model_file, big_X_train, big_y_train, big_X_test, big_y_test,
+def frozen_from_4mvt(model_name, model_file, big_X_train, big_y_train, big_X_test, big_y_test,
                      class_names=class_names, ch_num=25, ep=50, dr=0.1, addon=''):
 
     features_train = [None] * len(big_X_train)
@@ -753,14 +677,14 @@ def frozen_from_2mvt(model_name, model_file, big_X_train, big_y_train, big_X_tes
     for i in range(len(big_X_train)):
         filename_ = '{0}{1}{2}'.format(model_name, '_transfer_learning_{}_'.format(i + 1), addon)
 
-        model_ = EEGNet_var(model_file, 2, 4, Chans=ch_num, dropoutRate=dr, Samples=1125)
+        model_ = EEGNet_var(model_file, 4, 2, Chans=ch_num, dropoutRate=dr, Samples=1125)
 
 
         metrics[i] = transfer_unit(model_, features_train[i], labels_train[i],
                                    features_test[i], labels_test[i], filename_,
                                    class_names)
 
-    metrics_to_csv(metrics, '{}_Frzn_2to4mvt_{}'.format(model_name, addon))
+    metrics_to_csv(metrics, '{}_Standard_testing_{}'.format(model_name, addon))
 
 
 def transfer_unit(model, training_data, training_labels,
@@ -770,8 +694,8 @@ def transfer_unit(model, training_data, training_labels,
     model.compile(loss=categorical_crossentropy,
                   optimizer=Adam(), metrics=['accuracy'])
 
-    # for layer in model.layers[:-7]:
-    #     layer.trainable = False
+    for layer in model.layers[:-7]:
+        layer.trainable = False
 
     history = model.fit(training_data, training_labels,
                         batch_size=32, epochs=500, verbose=0,
@@ -781,3 +705,179 @@ def transfer_unit(model, training_data, training_labels,
                                    filename, class_names)
 
     return values
+
+
+def frozen_4mvt_2mvt(model_name, model_file, big_X_train, big_y_train, big_X_test, big_y_test,
+                     class_names=class_names, ch_num=25, ep=50, dr=0.1, addon=''):
+    ###
+    ### First create the sequence of training users and single test user
+    ###
+    list_element = []
+    my_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    series = []
+
+    for idx in range(182):
+        if idx % 14 != 0:
+            list_element.append(my_list[idx % len(my_list)])
+        elif idx % 14 == 0:
+            series.append(list_element)
+            list_element = []
+    series[0] = list_element
+
+    metrics = np.zeros(((len(my_list)), 4))
+    ###
+    ### Iterate trough the sequences
+    ###
+    for user_list in series:
+        print('Starting Frozen learning for user {}'.format(user_list[-1] + 1))
+
+        features_train = []
+        labels_train = []
+
+        # Create the first training data
+        for i in user_list[:-1]:
+            temp = [item for sublist in big_X_train[i] for item in sublist]
+            temp = np.asanyarray(temp)
+            temp = np.swapaxes(temp, 1, 2)
+            features_train.append(temp.reshape(temp.shape[0], 1, ch_num, 1125))
+            lab = [item for sublist in big_y_train[i] for item in sublist]
+            # encode class values as integers
+            encoder = LabelEncoder()
+            encoder.fit(lab)
+            encoded_Y = encoder.transform(lab)
+            # convert integers to dummy variables (i.e. one hot encoded)
+            labels_train.append(np_utils.to_categorical(encoded_Y))
+
+            # Also add the testing data to increase the size of training data
+            temp = [item for sublist in big_X_test[i] for item in sublist]
+            temp = np.asanyarray(temp)
+            temp = np.swapaxes(temp, 1, 2)
+            features_train.append(temp.reshape(temp.shape[0], 1, ch_num, 1125))
+            lab = [item for sublist in big_y_test[i] for item in sublist]
+            # encode class values as integers
+            encoder = LabelEncoder()
+            encoder.fit(lab)
+            encoded_Y = encoder.transform(lab)
+            # convert integers to dummy variables (i.e. one hot encoded)
+            labels_train.append(np_utils.to_categorical(encoded_Y))
+
+        ###
+        ### Create the second training data (of the specific user)
+        ###
+        temp = [item for sublist in big_X_train[user_list[-1]] for item in sublist]
+        temp = np.asanyarray(temp)
+        temp = np.swapaxes(temp, 1, 2)
+        features_train.append(temp.reshape(temp.shape[0], 1, ch_num, 1125))
+        lab = [item for sublist in big_y_train[user_list[-1]] for item in sublist]
+        # encode class values as integers
+        encoder = LabelEncoder()
+        encoder.fit(lab)
+        encoded_Y = encoder.transform(lab)
+        # convert integers to dummy variables (i.e. one hot encoded)
+        labels_train.append(np_utils.to_categorical(encoded_Y))
+
+        # Flatten the data for training
+        full_features = np.vstack(features_train)
+        full_labels = np.vstack(labels_train)
+
+        ###
+        ### Create the testing data (of the specific user)
+        ###
+        temp = [item for sublist in big_X_test[user_list[-1]] for item in sublist]
+        temp = np.asanyarray(temp)
+        temp = np.swapaxes(temp, 1, 2)
+        features_test = temp.reshape(temp.shape[0], 1, ch_num, 1125)
+        lab = [item for sublist in big_y_test[user_list[-1]] for item in sublist]
+        # encode class values as integers
+        encoder = LabelEncoder()
+        encoder.fit(lab)
+        encoded_Y = encoder.transform(lab)
+        # convert integers to dummy variables (i.e. one hot encoded)
+        labels_test = np_utils.to_categorical(encoded_Y)
+
+        filename_ = '{0}{1}{2}'.format(model_name, '_transfer_learning_{}_'.format(i + 1), addon)
+
+        model_ = EEGNet_var(model_file, 4, 2, Chans=ch_num, dropoutRate=dr, Samples=1125)
+
+        metrics[user_list[-1]] = transfer_unit(model_, full_features, full_labels,
+                                               features_test, labels_test, filename_,
+                                               class_names)
+
+    metrics_to_csv(metrics, '{}_Standard_testing_{}'.format(model_name, addon))
+
+def full_freezing(model_name, big_X_train, big_y_train, big_X_test, big_y_test,
+                  class_names=class_names, ch_num=25, dr=0.1, addon=''):
+    ###
+    ### Take all the data for training
+    ###
+
+    ###
+    ### Train and save the model
+    ###
+
+    my_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+    model = EEGNet_org(nb_classes=2, Chans=ch_num, Samples=1125, dropoutRate=dr)
+
+    model.compile(loss=categorical_crossentropy,
+                  optimizer=Adam(), metrics=['accuracy'])
+
+    features_train = []
+    labels_train = []
+
+    for i in my_list:
+        temp = [item for sublist in big_X_train[i] for item in sublist]
+        temp = np.asanyarray(temp)
+        temp = np.swapaxes(temp, 1, 2)
+        features_train.append(temp.reshape(temp.shape[0], 1, ch_num, 1125))
+        lab = [item for sublist in big_y_train[i] for item in sublist]
+        # encode class values as integers
+        encoder = LabelEncoder()
+        encoder.fit(lab)
+        encoded_Y = encoder.transform(lab)
+        # convert integers to dummy variables (i.e. one hot encoded)
+        labels_train.append(np_utils.to_categorical(encoded_Y))
+
+        # Also add the testing data to increase the size of training data
+        temp = [item for sublist in big_X_test[i] for item in sublist]
+        temp = np.asanyarray(temp)
+        temp = np.swapaxes(temp, 1, 2)
+        features_train.append(temp.reshape(temp.shape[0], 1, ch_num, 1125))
+        lab = [item for sublist in big_y_test[i] for item in sublist]
+        # encode class values as integers
+        encoder = LabelEncoder()
+        encoder.fit(lab)
+        encoded_Y = encoder.transform(lab)
+        # convert integers to dummy variables (i.e. one hot encoded)
+        labels_train.append(np_utils.to_categorical(encoded_Y))
+
+        # Flatten the data for training
+        full_features = np.vstack(features_train)
+        full_labels = np.vstack(labels_train)
+
+    filename_ = '{0}{1}{2}'.format(model_name, '_Full_Freezing_2mvt', addon)
+
+    full_freezing_unit(model, full_features, full_labels,
+                       filename_, class_names)
+
+def full_freezing_unit(model, full_features, full_labels,
+                       filename, class_names):
+    ###
+    ### First train the data on all the users -1
+    ###
+    start = time.time()
+
+    model.fit(full_features, full_labels,
+              batch_size=32, epochs=500, verbose=0)
+
+    end = time.time()
+    print('First model training time: {}'.format(end - start))
+    model.save('models/{}.h5'.format(filename))
+
+    model.save_weights('models/{}_w.h5'.format(filename))
+
+    # # Deletes the existing model
+    # del model
+    #
+    # # Returns a compiled model identical to the previous one
+    # model = load_model('my_model.h5')
