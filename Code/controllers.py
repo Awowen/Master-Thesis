@@ -774,7 +774,7 @@ def transfer_unit(model, training_data, training_labels,
     #     layer.trainable = False
 
     history = model.fit(training_data, training_labels,
-                        batch_size=32, epochs=500, verbose=0,
+                        batch_size=32, epochs=100, verbose=0,
                         validation_data=(testing_data, testing_labels))
     y_prob = model.predict(testing_data)
     values = get_metrics_and_plots(testing_labels, y_prob, history,
