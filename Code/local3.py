@@ -1,23 +1,22 @@
-from helper import prepare_data_standard_from_list, load_simplify_data
+from helper3 import prepare_data_standard_from_list, load_simplify_data
 from controllers import freezing_layers, splitted_layers, frozen_with_model, splited_with_model, standard_all
 from models import EEGNet_org
 import glob as glob
 
-train_list = glob.glob('../Data/2mvt/S*E.mat')
-test_list = glob.glob('../Data/2mvt/S*T.mat')
+train_list = glob.glob('../Data/BCI_4_2b/*T.mat')
+test_list = glob.glob('../Data/BCI_4_2b/*E.mat')
 
 train_list.sort()
 test_list.sort()
 
-# Freezing Learning
 big_X_train, big_y_train = prepare_data_standard_from_list(load_simplify_data(train_list, True, False))
 big_X_test, big_y_test = prepare_data_standard_from_list(load_simplify_data(test_list, True, False))
 
-
-EEGnet = EEGNet_org(nb_classes=2, Chans=13, Samples=1125, dropoutRate=0.1)
-
-standard_all(EEGnet, 'EEG_net', big_X_train, big_y_train, big_X_test, big_y_test,
-             class_names=['Right hand', 'Feet'], ch_num=13, addon='_13_channels')
+#
+# EEGnet = EEGNet_org(nb_classes=2, Chans=13, Samples=1125, dropoutRate=0.1)
+#
+# standard_all(EEGnet, 'EEG_net', big_X_train, big_y_train, big_X_test, big_y_test,
+#              class_names=['Right hand', 'Feet'], ch_num=13, addon='_13_channels')
 # freezing_layers('EEG_net', big_X_train, big_y_train, big_X_test, big_y_test,
 #                 class_names=['Right hand', 'Feet'],
 #                 ch_num=13, dr=0.1, addon='_13_channels')

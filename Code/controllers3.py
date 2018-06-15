@@ -1,8 +1,8 @@
 # TODO: Cropped training
 import keras
 from models import EEGNet_org
-from helper import prediction_vector, get_metrics_and_plots
-from helper import metrics_to_csv
+from helper3 import prediction_vector, get_metrics_and_plots
+from helper3 import metrics_to_csv
 from keras.optimizers import Adam
 from keras.losses import binary_crossentropy, categorical_crossentropy
 import numpy as np
@@ -97,7 +97,7 @@ def standard_all(model_, model_name, big_X_train, big_y_train,
 def opt_Dropout_rate_CV_EEGNet(dropout_start, dropout_stop, model_name, big_X_train, big_y_train,
                                big_X_val, big_y_val, class_names=class_names, ch_num=25):
     for i in np.arange(dropout_start, dropout_stop, 0.01):
-        EEGnet = EEGNet_org(nb_classes=4, Chans=ch_num, Samples=1125, dropoutRate=i)
+        EEGnet = EEGNet_org(nb_classes=2, Chans=ch_num, Samples=1125, dropoutRate=i)
 
         standard_all(EEGnet, model_name, big_X_train, big_y_train, big_X_val, big_y_val,
                      ch_num=ch_num, class_names=class_names,
@@ -191,7 +191,7 @@ def freezing_layers(model_name, big_X_train, big_y_train, big_X_test, big_y_test
     for user_list in series:
         print('Starting Frozen learning for user {}'.format(user_list[-1] + 1))
 
-        model = EEGNet_org(nb_classes=4, Chans=ch_num, Samples=1125, dropoutRate=dr)
+        model = EEGNet_org(nb_classes=2, Chans=ch_num, Samples=1125, dropoutRate=dr)
 
         model.compile(loss=categorical_crossentropy,
                       optimizer=Adam(), metrics=['accuracy'])
@@ -346,7 +346,7 @@ def splitted_layers(model_name, big_X_train, big_y_train, big_X_test, big_y_test
     for user_list in series:
         print('Starting Splitted learning for user {}'.format(user_list[-1]))
 
-        model = EEGNet_org(nb_classes=4, Chans=ch_num, Samples=1125, dropoutRate=dr)
+        model = EEGNet_org(nb_classes=2, Chans=ch_num, Samples=1125, dropoutRate=dr)
 
         model.compile(loss=categorical_crossentropy,
                       optimizer=Adam(), metrics=['accuracy'])
@@ -650,7 +650,7 @@ def full_freezing(model_name, big_X_train, big_y_train, big_X_test, big_y_test,
 
     my_list = [0, 1, 2, 3, 4, 5, 6, 7]
 
-    model = EEGNet_org(nb_classes=4, Chans=ch_num, Samples=1125, dropoutRate=dr)
+    model = EEGNet_org(nb_classes=2, Chans=ch_num, Samples=1125, dropoutRate=dr)
 
     model.compile(loss=categorical_crossentropy,
                   optimizer=Adam(), metrics=['accuracy'])
