@@ -31,13 +31,13 @@ full_distributed('EEG_net', big_X_train, big_y_train, big_X_test, big_y_test,
 freezing_layers('EEG_net', big_X_train, big_y_train, big_X_test, big_y_test,
                 class_names=['Left hand', 'Right hand'],
                 ch_num=6, dr=0.1, addon='_6_Channels')
-
-
+#
+#
 # full_freezing('EEG_Net', big_X_train, big_y_train, big_X_test, big_y_test,
-#               class_names=['Left hand', 'Right hand', 'Both Feet', 'Tongue'],
+#               class_names=['Left hand', 'Right hand'],
 #               ch_num=6, dr=0.1, addon='_6_Channels')
 
-# frozen_from_2mvt('EEG_net', 'models/EEG_net_Full_Freezing_2mvt_13_channels.h5', big_X_train, big_y_train, big_X_test, big_y_test,
+# frozen_from_4mvt('EEG_net', 'models/EEG_net_Full_Freezing_2mvt_13_channels.h5', big_X_train, big_y_train, big_X_test, big_y_test,
 #                  class_names=['Left hand', 'Right hand', 'Both Feet', 'Tongue'], ch_num=13,
 #                  ep=200, dr=0.1, addon='_13_channels')
 
