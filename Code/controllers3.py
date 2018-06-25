@@ -173,13 +173,13 @@ def freezing_layers(model_name, big_X_train, big_y_train, big_X_test, big_y_test
     ### First create the sequence of training users and single test user
     ###
     list_element = []
-    my_list = [0, 1, 2, 3, 4, 5, 6, 7]
+    my_list = [0, 1, 2, 3, 4, 5, 6, 7, 8]
     series = []
 
-    for idx in range(72):
-        if idx % 9 != 0:
+    for idx in range(90):
+        if idx % 10 != 0:
             list_element.append(my_list[idx % len(my_list)])
-        elif idx % 9 == 0:
+        elif idx % 10 == 0:
             series.append(list_element)
             list_element = []
     series[0] = list_element
@@ -325,13 +325,13 @@ def splitted_layers(model_name, big_X_train, big_y_train, big_X_test, big_y_test
     ### First create the sequence of training users and single test user
     ###
     list_element = []
-    my_list = [0, 1, 2, 3, 4, 5, 6, 7]
+    my_list = [0, 1, 2, 3, 4, 5, 6, 7, 8]
     series = []
 
-    for idx in range(72):
-        if idx % 9 != 0:
+    for idx in range(90):
+        if idx % 10 != 0:
             list_element.append(my_list[idx % len(my_list)])
-        elif idx % 9 == 0:
+        elif idx % 10 == 0:
             series.append(list_element)
             list_element = []
     series[0] = list_element
@@ -446,13 +446,13 @@ def frozen_with_model(model_name, big_X_train, big_y_train, big_X_test, big_y_te
     ### First create the sequence of training users and single test user
     ###
     list_element = []
-    my_list = [0, 1, 2, 3, 4, 5, 6, 7]
+    my_list = [0, 1, 2, 3, 4, 5, 6, 7, 9]
     series = []
 
-    for idx in range(72):
-        if idx % 9 != 0:
+    for idx in range(90):
+        if idx % 10 != 0:
             list_element.append(my_list[idx % len(my_list)])
-        elif idx % 9 == 0:
+        elif idx % 10 == 0:
             series.append(list_element)
             list_element = []
     series[0] = list_element
@@ -777,10 +777,109 @@ def transfer_unit(model, training_data, training_labels,
     #     layer.trainable = False
 
     history = model.fit(training_data, training_labels,
-                        batch_size=32, epochs=100, verbose=0,
+                        batch_size=32, epochs=200, verbose=0,
                         validation_data=(testing_data, testing_labels))
+
     y_prob = model.predict(testing_data)
     values = get_metrics_and_plots(testing_labels, y_prob, history,
                                    filename, class_names)
 
     return values
+
+def frozen_4mvt_2mvt(model_name, model_file, big_X_train, big_y_train, big_X_test, big_y_test,
+                     class_names=class_names, ch_num=25, ep=50, dr=0.1, addon=''):
+    ###
+    ### First create the sequence of training users and single test user
+    ###
+    list_element = []
+    my_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    series = []
+
+    for idx in range(90):
+        if idx % 10 != 0:
+            list_element.append(my_list[idx % len(my_list)])
+        elif idx % 10 == 0:
+            series.append(list_element)
+            list_element = []
+    series[0] = list_element
+
+    metrics = np.zeros(((len(my_list)), 4))
+    ###
+    ### Iterate trough the sequences
+    ###
+    for user_list in series:
+        print('Starting Frozen learning for user {}'.format(user_list[-1] + 1))
+
+        features_train = []
+        labels_train = []
+
+        # Create the first training data
+        for i in user_list[:-1]:
+            temp = [item for sublist in big_X_train[i] for item in sublist]
+            temp = np.asanyarray(temp)
+            temp = np.swapaxes(temp, 1, 2)
+            features_train.append(temp.reshape(temp.shape[0], 1, ch_num, 1125))
+            lab = [item for sublist in big_y_train[i] for item in sublist]
+            # encode class values as integers
+            encoder = LabelEncoder()
+            encoder.fit(lab)
+            encoded_Y = encoder.transform(lab)
+            # convert integers to dummy variables (i.e. one hot encoded)
+            labels_train.append(np_utils.to_categorical(encoded_Y))
+
+            # Also add the testing data to increase the size of training data
+            temp = [item for sublist in big_X_test[i] for item in sublist]
+            temp = np.asanyarray(temp)
+            temp = np.swapaxes(temp, 1, 2)
+            features_train.append(temp.reshape(temp.shape[0], 1, ch_num, 1125))
+            lab = [item for sublist in big_y_test[i] for item in sublist]
+            # encode class values as integers
+            encoder = LabelEncoder()
+            encoder.fit(lab)
+            encoded_Y = encoder.transform(lab)
+            # convert integers to dummy variables (i.e. one hot encoded)
+            labels_train.append(np_utils.to_categorical(encoded_Y))
+
+        ###
+        ### Create the second training data (of the specific user)
+        ###
+        temp = [item for sublist in big_X_train[user_list[-1]] for item in sublist]
+        temp = np.asanyarray(temp)
+        temp = np.swapaxes(temp, 1, 2)
+        features_train.append(temp.reshape(temp.shape[0], 1, ch_num, 1125))
+        lab = [item for sublist in big_y_train[user_list[-1]] for item in sublist]
+        # encode class values as integers
+        encoder = LabelEncoder()
+        encoder.fit(lab)
+        encoded_Y = encoder.transform(lab)
+        # convert integers to dummy variables (i.e. one hot encoded)
+        labels_train.append(np_utils.to_categorical(encoded_Y))
+
+        # Flatten the data for training
+        full_features = np.vstack(features_train)
+        full_labels = np.vstack(labels_train)
+
+        ###
+        ### Create the testing data (of the specific user)
+        ###
+        temp = [item for sublist in big_X_test[user_list[-1]] for item in sublist]
+        temp = np.asanyarray(temp)
+        temp = np.swapaxes(temp, 1, 2)
+        features_test = temp.reshape(temp.shape[0], 1, ch_num, 1125)
+        lab = [item for sublist in big_y_test[user_list[-1]] for item in sublist]
+        # encode class values as integers
+        encoder = LabelEncoder()
+        encoder.fit(lab)
+        encoded_Y = encoder.transform(lab)
+        # convert integers to dummy variables (i.e. one hot encoded)
+        labels_test = np_utils.to_categorical(encoded_Y)
+
+        filename_ = '{0}{1}{2}'.format(model_name, '_transfer_learning_{}_'.format(i + 1), addon)
+
+        model_ = EEGNet_var(model_file, 4, 2, Chans=ch_num, dropoutRate=dr, Samples=1125)
+
+        metrics[user_list[-1]] = transfer_unit(model_, full_features, full_labels,
+                                               features_test, labels_test, filename_,
+                                               class_names)
+
+    metrics_to_csv(metrics, '{}_Standard_testing_{}'.format(model_name, addon))
