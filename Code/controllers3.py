@@ -446,7 +446,7 @@ def frozen_with_model(model_name, big_X_train, big_y_train, big_X_test, big_y_te
     ### First create the sequence of training users and single test user
     ###
     list_element = []
-    my_list = [0, 1, 2, 3, 4, 5, 6, 7, 9]
+    my_list = [0, 1, 2, 3, 4, 5, 6, 7, 8]
     series = []
 
     for idx in range(90):
@@ -549,13 +549,13 @@ def splited_with_model(model_name, big_X_train, big_y_train, big_X_test, big_y_t
     ### First create the sequence of training users and single test user
     ###
     list_element = []
-    my_list = [0, 1, 2, 3, 4, 5, 6, 7]
+    my_list = [0, 1, 2, 3, 4, 5, 6, 7, 8]
     series = []
 
-    for idx in range(72):
-        if idx % 9 != 0:
+    for idx in range(90):
+        if idx % 10 != 0:
             list_element.append(my_list[idx % len(my_list)])
-        elif idx % 9 == 0:
+        elif idx % 10 == 0:
             series.append(list_element)
             list_element = []
     series[0] = list_element
@@ -648,7 +648,7 @@ def full_freezing(model_name, big_X_train, big_y_train, big_X_test, big_y_test,
     ### Train and save the model
     ###
 
-    my_list = [0, 1, 2, 3, 4, 5, 6, 7]
+    my_list = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
     model = EEGNet_org(nb_classes=2, Chans=ch_num, Samples=1125, dropoutRate=dr)
 
@@ -717,55 +717,6 @@ def full_freezing_unit(model, full_features, full_labels,
     # model = load_model('my_model.h5')
 
 
-def frozen_from_2mvt(model_name, model_file, big_X_train, big_y_train, big_X_test, big_y_test,
-                     class_names=class_names, ch_num=25, ep=50, dr=0.1, addon=''):
-
-    features_train = [None] * len(big_X_train)
-    labels_train = [None] * len(big_y_train)
-
-    for i, (X_user, y_user) in enumerate(zip(big_X_train, big_y_train)):
-        temp = [item for sublist in X_user for item in sublist]
-        temp = np.asanyarray(temp)
-        temp = np.swapaxes(temp, 1, 2)
-        features_train[i] = temp.reshape(temp.shape[0], 1, ch_num, 1125)
-        lab = [item for sublist in y_user for item in sublist]
-        # encode class values as integers
-        encoder = LabelEncoder()
-        encoder.fit(lab)
-        encoded_Y = encoder.transform(lab)
-        # convert integers to dummy variables (i.e. one hot encoded)
-        labels_train[i] = np_utils.to_categorical(encoded_Y)
-
-    features_test = [None] * len(big_X_test)
-    labels_test = [None] * len(big_y_test)
-    for i, (X_user, y_user) in enumerate(zip(big_X_test, big_y_test)):
-        temp = [item for sublist in X_user for item in sublist]
-        temp = np.asanyarray(temp)
-        temp = np.swapaxes(temp, 1, 2)
-        features_test[i] = temp.reshape(temp.shape[0], 1, ch_num, 1125)
-        lab = [item for sublist in y_user for item in sublist]
-        # encode class values as integers
-        encoder = LabelEncoder()
-        encoder.fit(lab)
-        encoded_Y = encoder.transform(lab)
-        # convert integers to dummy variables (i.e. one hot encoded)
-        labels_test[i] = np_utils.to_categorical(encoded_Y)
-
-    metrics = np.zeros(((len(big_y_train)), 4))
-
-    for i in range(len(big_X_train)):
-        filename_ = '{0}{1}{2}'.format(model_name, '_transfer_learning_{}_'.format(i + 1), addon)
-
-        model_ = EEGNet_var(model_file, 2, 4, Chans=ch_num, dropoutRate=dr, Samples=1125)
-
-
-        metrics[i] = transfer_unit(model_, features_train[i], labels_train[i],
-                                   features_test[i], labels_test[i], filename_,
-                                   class_names)
-
-    metrics_to_csv(metrics, '{}_Frzn_2to4mvt_{}'.format(model_name, addon))
-
-
 def transfer_unit(model, training_data, training_labels,
                   testing_data, testing_labels, filename,
                   class_names=class_names):
@@ -792,7 +743,7 @@ def frozen_4mvt_2mvt(model_name, model_file, big_X_train, big_y_train, big_X_tes
     ### First create the sequence of training users and single test user
     ###
     list_element = []
-    my_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    my_list = [0, 1, 2, 3, 4, 5, 6, 7, 8]
     series = []
 
     for idx in range(90):
@@ -874,7 +825,7 @@ def frozen_4mvt_2mvt(model_name, model_file, big_X_train, big_y_train, big_X_tes
         # convert integers to dummy variables (i.e. one hot encoded)
         labels_test = np_utils.to_categorical(encoded_Y)
 
-        filename_ = '{0}{1}{2}'.format(model_name, '_transfer_learning_{}_'.format(i + 1), addon)
+        filename_ = '{0}{1}{2}'.format(model_name, '_frozen_transfer_learning_{}_'.format(i + 1), addon)
 
         model_ = EEGNet_var(model_file, 4, 2, Chans=ch_num, dropoutRate=dr, Samples=1125)
 
@@ -882,4 +833,54 @@ def frozen_4mvt_2mvt(model_name, model_file, big_X_train, big_y_train, big_X_tes
                                                features_test, labels_test, filename_,
                                                class_names)
 
-    metrics_to_csv(metrics, '{}_Standard_testing_{}'.format(model_name, addon))
+    metrics_to_csv(metrics, '{}_transfer_frozen_learning_{}'.format(model_name, addon))
+
+
+
+def standard_4mvt_2mvt(model_name, model_file, big_X_train, big_y_train, big_X_test, big_y_test,
+                     class_names=class_names, ch_num=25, ep=50, dr=0.1, addon=''):
+    features_train = [None] * len(big_X_train)
+    labels_train = [None] * len(big_y_train)
+
+    for i, (X_user, y_user) in enumerate(zip(big_X_train, big_y_train)):
+        temp = [item for sublist in X_user for item in sublist]
+        temp = np.asanyarray(temp)
+        temp = np.swapaxes(temp, 1, 2)
+        features_train[i] = temp.reshape(temp.shape[0], 1, ch_num, 1125)
+        lab = [item for sublist in y_user for item in sublist]
+        # encode class values as integers
+        encoder = LabelEncoder()
+        encoder.fit(lab)
+        encoded_Y = encoder.transform(lab)
+        # convert integers to dummy variables (i.e. one hot encoded)
+        labels_train[i] = np_utils.to_categorical(encoded_Y)
+
+    features_test = [None] * len(big_X_test)
+    labels_test = [None] * len(big_y_test)
+    for i, (X_user, y_user) in enumerate(zip(big_X_test, big_y_test)):
+        temp = [item for sublist in X_user for item in sublist]
+        temp = np.asanyarray(temp)
+        temp = np.swapaxes(temp, 1, 2)
+        features_test[i] = temp.reshape(temp.shape[0], 1, ch_num, 1125)
+        lab = [item for sublist in y_user for item in sublist]
+        # encode class values as integers
+        encoder = LabelEncoder()
+        encoder.fit(lab)
+        encoded_Y = encoder.transform(lab)
+        # convert integers to dummy variables (i.e. one hot encoded)
+        labels_test[i] = np_utils.to_categorical(encoded_Y)
+
+    metrics = np.zeros(((len(big_y_train)), 4))
+
+    for i in range(len(big_X_train)):
+        model_ = EEGNet_var(model_file, 4, 2, Chans=ch_num, dropoutRate=dr, Samples=1125)
+
+        model_.compile(loss=categorical_crossentropy,
+                       optimizer=Adam(), metrics=['accuracy'])
+
+        filename_ = '{0}{1}{2}'.format(model_name, '_transfer_standard_learning_{}_'.format(i + 1), addon)
+        metrics[i] = transfer_unit(model_, features_train[i], labels_train[i],
+                                   features_test[i], labels_test[i], filename_,
+                                   class_names)
+
+    metrics_to_csv(metrics, '{}_transfer_standard_learning_{}'.format(model_name, addon))

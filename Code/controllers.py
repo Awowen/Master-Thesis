@@ -765,6 +765,54 @@ def frozen_from_2mvt(model_name, model_file, big_X_train, big_y_train, big_X_tes
 
     metrics_to_csv(metrics, '{}_Frzn_2to4mvt_{}'.format(model_name, addon))
 
+def standard_from_2mvt(model_name, model_file, big_X_train, big_y_train, big_X_test, big_y_test,
+                     class_names=class_names, ch_num=25, ep=50, dr=0.1, addon=''):
+    features_train = [None] * len(big_X_train)
+    labels_train = [None] * len(big_y_train)
+
+    for i, (X_user, y_user) in enumerate(zip(big_X_train, big_y_train)):
+        temp = [item for sublist in X_user for item in sublist]
+        temp = np.asanyarray(temp)
+        temp = np.swapaxes(temp, 1, 2)
+        features_train[i] = temp.reshape(temp.shape[0], 1, ch_num, 1125)
+        lab = [item for sublist in y_user for item in sublist]
+        # encode class values as integers
+        encoder = LabelEncoder()
+        encoder.fit(lab)
+        encoded_Y = encoder.transform(lab)
+        # convert integers to dummy variables (i.e. one hot encoded)
+        labels_train[i] = np_utils.to_categorical(encoded_Y)
+
+    features_test = [None] * len(big_X_test)
+    labels_test = [None] * len(big_y_test)
+    for i, (X_user, y_user) in enumerate(zip(big_X_test, big_y_test)):
+        temp = [item for sublist in X_user for item in sublist]
+        temp = np.asanyarray(temp)
+        temp = np.swapaxes(temp, 1, 2)
+        features_test[i] = temp.reshape(temp.shape[0], 1, ch_num, 1125)
+        lab = [item for sublist in y_user for item in sublist]
+        # encode class values as integers
+        encoder = LabelEncoder()
+        encoder.fit(lab)
+        encoded_Y = encoder.transform(lab)
+        # convert integers to dummy variables (i.e. one hot encoded)
+        labels_test[i] = np_utils.to_categorical(encoded_Y)
+
+    metrics = np.zeros(((len(big_y_train)), 4))
+
+    for i in range(len(big_X_train)):
+        model_ = EEGNet_var(model_file, 2, 4, Chans=ch_num, dropoutRate=dr, Samples=1125)
+
+        model_.compile(loss=categorical_crossentropy,
+                      optimizer=Adam(), metrics=['accuracy'])
+
+        filename_ = '{0}{1}{2}'.format(model_name, '_transfer_standard_learning_{}_'.format(i + 1), addon)
+        metrics[i] = transfer_unit(model_, features_train[i], labels_train[i],
+                                   features_test[i], labels_test[i], filename_,
+                                   class_names)
+
+    metrics_to_csv(metrics, '{}_transfer_standard_learning_{}'.format(model_name, addon))
+
 
 def transfer_unit(model, training_data, training_labels,
                   testing_data, testing_labels, filename,
@@ -773,11 +821,11 @@ def transfer_unit(model, training_data, training_labels,
     model.compile(loss=categorical_crossentropy,
                   optimizer=Adam(), metrics=['accuracy'])
 
-    # for layer in model.layers[:-7]:
-    #     layer.trainable = False
+    for layer in model.layers[:-7]:
+        layer.trainable = False
 
     history = model.fit(training_data, training_labels,
-                        batch_size=32, epochs=100, verbose=0,
+                        batch_size=32, epochs=50, verbose=0,
                         validation_data=(testing_data, testing_labels))
     y_prob = model.predict(testing_data)
     values = get_metrics_and_plots(testing_labels, y_prob, history,
