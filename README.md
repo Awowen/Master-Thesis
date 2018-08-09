@@ -1,2 +1,6 @@
 # Master-Thesis
-Deep Learning and Transfer Learning in EEG Saliency Detection
+Applying Transfer Learning To Deep Learned Models For EEG Analysis
+
+## Abstract 
+
+The introduction of deep learning and transfer learning techniques in fields such as computer vision allowed a leap forward in the accuracy of image clas- sification tasks, but currently there is only a limited use of such techniques in neuroscience. The difficulty of using deep learning methods in neuroscience lies in the complexity of the information that is processed, the availability of data and the cost of producing sufficient high quality annotations to train such models. We will introduce transfer learning of deep learned models inspired by computer vision for the field of EEG analysis. Our method was tested on the dataset of the BCI competition IV 2a where we achieve 0.76 κ which is higher than the top results of 0.57κ. We also explore inter-experimental transfer learning using on the dataset of the BCI competition IV 2b. The inter-experimental transfer learning is able to outperform the standard deep learning approaches, thus being a better option when the amount of data is low, especially when few users are available. In this project we propose a method that can produce reliable EEG signal classification, based on modest amounts of training data through the use of transfer learning. This will allow researchers to build and test new methods more easily.
